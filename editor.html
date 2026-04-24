@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Carolzinha Editor</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080808;--s:#111;--s2:#1a1a1a;--bd:rgba(255,255,255,.07);--ac:#FF5C3A;--ac2:#FFB547;--tx:#F0EDE8;--mu:#7A7570;--ok:#4ADE80}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;justify-content:center;padding:20px 20px 60px;-webkit-font-smoothing:antialiased}
+.wrap{width:100%;max-width:480px;display:flex;flex-direction:column;gap:16px}
+.header{padding:32px 0 8px;text-align:center}
+.logo{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tagline{font-size:13px;color:var(--mu);margin-top:4px}
+.card{background:var(--s);border:1px solid var(--bd);border-radius:16px;padding:20px}
+.card-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:14px}
+.drive-row{display:flex;align-items:center;gap:12px}
+.drive-av{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.drive-av-ph{width:38px;height:38px;border-radius:50%;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.drive-info{flex:1}.drive-name{font-size:14px;font-weight:600}.drive-sub{font-size:11px;color:var(--mu)}
+.btn-c{padding:8px 16px;border-radius:10px;background:rgba(255,92,58,.15);color:var(--ac);border:1px solid rgba(255,92,58,.3);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn-off{padding:8px 14px;border-radius:10px;background:var(--s2);color:var(--mu);border:1px solid var(--bd);font-size:13px;cursor:pointer}
+label{font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:7px}
+.fg{margin-bottom:14px}
+input[type=text],textarea{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:11px 14px;color:var(--tx);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s}
+input:focus,textarea:focus{border-color:rgba(255,92,58,.5)}
+input::placeholder,textarea::placeholder{color:var(--mu)}
+textarea{resize:none;min-height:70px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.opts3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.opt{background:var(--s2);border:1.5px solid var(--bd);border-radius:12px;padding:11px 8px;cursor:pointer;text-align:center;transition:all .2s;user-select:none}
+.opt:hover{border-color:rgba(255,92,58,.3)}.opt.sel{border-color:var(--ac);background:rgba(255,92,58,.08)}
+.oico{font-size:20px;margin-bottom:4px}.olbl{font-size:11px;font-weight:700;font-family:'Syne',sans-serif}.odsc{font-size:10px;color:var(--mu);margin-top:2px}
+.sw{height:34px;border-radius:7px;margin-bottom:7px;border:2px solid transparent}.opt.sel .sw{border-color:#fff}
+.file-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.fi{background:var(--s2);border:1.5px solid var(--bd);border-radius:10px;padding:10px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s}
+.fi:hover{border-color:rgba(255,92,58,.3)}.fi.sel{border-color:var(--ac);background:rgba(255,92,58,.07)}
+.fn{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fs{font-size:10px;color:var(--mu);flex-shrink:0}
+.fck{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s}
+.fi.sel .fck{background:var(--ac);border-color:var(--ac);color:#fff}
+.pg-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.pg-btn{flex:1;padding:9px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;color:var(--tx);font-size:12px;cursor:pointer}
+.pg-btn:disabled{opacity:.35;cursor:not-allowed}
+.pg-info{font-size:11px;color:var(--mu);white-space:nowrap}
+.btn-p{width:100%;padding:15px;background:linear-gradient(135deg,var(--ac),#FF8C6A);border:none;border-radius:13px;color:#fff;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 6px 24px rgba(255,92,58,.28)}
+.btn-p:hover{transform:translateY(-1px)}.btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-s{width:100%;padding:13px;background:transparent;border:1px solid var(--bd);border-radius:13px;color:var(--mu);font-size:14px;cursor:pointer;margin-top:8px}
+.prog-wrap{display:none}.prog-wrap.show{display:block}
+.prog-pct{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;text-align:center;background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.prog-bg{height:6px;background:var(--s2);border-radius:100px;overflow:hidden;margin-bottom:8px}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:100px;transition:width .4s ease;width:0%}
+.prog-lbl{font-size:13px;color:var(--mu);text-align:center}
+.results{display:none}.results.show{display:flex;flex-direction:column;gap:10px}
+.ri{background:var(--s2);border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rico{width:34px;height:34px;background:rgba(74,222,128,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.rinfo{flex:1}.rn{font-size:13px;font-weight:500;margin-bottom:2px}.rd{font-size:11px;color:var(--mu)}
+.btn-dl{padding:7px 12px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:var(--ok);border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block}
+.note{background:rgba(255,181,71,.07);border:1px solid rgba(255,181,71,.2);border-radius:10px;padding:10px 13px;font-size:12px;color:#FFB547;line-height:1.5}
+.ok-note{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--ok);line-height:1.5;margin-bottom:10px}
+.err{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:10px;padding:10px 13px;font-size:12px;color:#f87171;margin-top:10px}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.5}}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);animation:p 1.5s ease infinite;margin-right:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <div class="logo">🎬 Carolzinha Editor</div>
+  <div class="tagline">Edição automática — direto no navegador</div>
+</div>
+
+<div class="note">⚡ O FFmpeg processa aqui no navegador. Clipes curtos (até 2min) levam ~5–15min. Deixe a aba aberta!</div>
+
+<!-- DRIVE -->
+<div class="card">
+  <div class="card-title">▲ Google Drive</div>
+  <div class="drive-row" id="driveRow">
+    <div class="drive-av-ph">👤</div>
+    <div class="drive-info"><div class="drive-name">Não conectado</div><div class="drive-sub">Conecte para importar vídeos</div></div>
+    <button class="btn-c" id="btnLogin" onclick="signIn()">Conectar</button>
+  </div>
+</div>
+
+<!-- PASTA -->
+<div class="card">
+  <div class="card-title">📁 Vídeos Brutos</div>
+  <div class="fg">
+    <label>Link ou ID da pasta de entrada</label>
+    <input type="text" id="folderId" placeholder="Cole o link ou ID da pasta do Drive..."/>
+  </div>
+  <div class="fg">
+    <label>Pasta de saída (opcional)</label>
+    <input type="text" id="outFolderId" placeholder="Vazio = salva na mesma pasta de entrada..."/>
+  </div>
+  <button class="btn-c" style="width:100%;text-align:center;padding:10px" onclick="buscarVideos()">🔍 Buscar Vídeos</button>
+  <div class="file-list" id="fileList"></div>
+  <div class="pg-row" id="pgRow" style="display:none">
+    <button class="pg-btn" id="pgPrev" onclick="pagAnterior()">← Anterior</button>
+    <span class="pg-info" id="pgInfo">Página 1</span>
+    <button class="pg-btn" id="pgNext" onclick="proxPagina()">Próxima →</button>
+  </div>
+  <div id="fileErr" style="display:none"></div>
+</div>
+
+<!-- BRIEFING -->
+<div class="card">
+  <div class="card-title">📋 Briefing</div>
+  <div class="fg">
+    <label>Nome do cliente</label>
+    <input type="text" id="clientName" placeholder="Ex: Ana & Pedro"/>
+  </div>
+  <div class="fg">
+    <label>Tipo de evento</label>
+    <div class="opts3">
+      <div class="opt" data-g="ev" data-v="casamento" onclick="pick(this)"><div class="oico">💍</div><div class="olbl">Casamento</div></div>
+      <div class="opt" data-g="ev" data-v="aniversario" onclick="pick(this)"><div class="oico">🎂</div><div class="olbl">Aniversário</div></div>
+      <div class="opt" data-g="ev" data-v="quincea" onclick="pick(this)"><div class="oico">👑</div><div class="olbl">Quinceañera</div></div>
+      <div class="opt" data-g="ev" data-v="corporativo" onclick="pick(this)"><div class="oico">🏢</div><div class="olbl">Corporativo</div></div>
+      <div class="opt" data-g="ev" data-v="formatura" onclick="pick(this)"><div class="oico">🎓</div><div class="olbl">Formatura</div></div>
+      <div class="opt" data-g="ev" data-v="outro" onclick="pick(this)"><div class="oico">🎬</div><div class="olbl">Outro</div></div>
+    </div>
+  </div>
+  <div class="fg">
+    <label>Mood</label>
+    <div class="opts">
+      <div class="opt" data-g="md" data-v="romantico" onclick="pick(this)"><div class="oico">🌹</div><div class="olbl">Romântico</div><div class="odsc">Suave, quente</div></div>
+      <div class="opt" data-g="md" data-v="energetico" onclick="pick(this)"><div class="oico">⚡</div><div class="olbl">Enérgico</div><div class="odsc">Rápido, vibrante</div></div>
+      <div class="opt" data-g="md" data-v="cinematico" onclick="pick(this)"><div class="oico">🎬</div><div class="olbl">Cinemático</div><div class="odsc">Épico, dramático</div></div>
+      <div class="opt" data-g="md" data-v="alegre" onclick="pick(this)"><div class="oico">🎉</div><div class="olbl">Alegre</div><div class="odsc">Leve, festivo</div></div>
+      <div class="opt" data-g="md" data-v="elegante" onclick="pick(this)"><div class="oico">✨</div><div class="olbl">Elegante</div><div class="odsc">Clean, refinado</div></div>
+      <div class="opt" data-g="md" data-v="nostalgico" onclick="pick(this)"><div class="oico">🎞</div><div class="olbl">Nostálgico</div><div class="odsc">Vintage, emocional</div></div>
+    </div>
+  </div>
+  <div class="fg">
+    <label>Color Grade</label>
+    <div class="opts">
+      <div class="opt sel" data-g="cg" data-v="natural" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#D4A76A99,#D4A76A33)"></div><div class="olbl">Natural</div></div>
+      <div class="opt" data-g="cg" data-v="quente" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#D46A1A99,#D46A1A33)"></div><div class="olbl">Quente</div></div>
+      <div class="opt" data-g="cg" data-v="frio" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#6A9FD499,#6A9FD433)"></div><div class="olbl">Frio</div></div>
+      <div class="opt" data-g="cg" data-v="desaturado" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#9A9A9A99,#9A9A9A33)"></div><div class="olbl">Desaturado</div></div>
+      <div class="opt" data-g="cg" data-v="verde" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#4A8C6A99,#4A8C6A33)"></div><div class="olbl">Verde Cin.</div></div>
+      <div class="opt" data-g="cg" data-v="rosado" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#D46A8C99,#D46A8C33)"></div><div class="olbl">Rosado</div></div>
+    </div>
+  </div>
+  <div class="fg">
+    <label>Formato</label>
+    <div class="opts3">
+      <div class="opt" data-g="fmt" data-v="reel" onclick="pick(this)"><div class="oico">📱</div><div class="olbl">Reel</div><div class="odsc">9:16</div></div>
+      <div class="opt" data-g="fmt" data-v="aftermovie" onclick="pick(this)"><div class="oico">🖥</div><div class="olbl">Aftermovie</div><div class="odsc">16:9</div></div>
+      <div class="opt sel" data-g="fmt" data-v="ambos" onclick="pick(this)"><div class="oico">✦</div><div class="olbl">Ambos</div><div class="odsc">9:16 + 16:9</div></div>
+    </div>
+  </div>
+  <div class="fg">
+    <label>Duração do vídeo final</label>
+    <div class="opts3">
+      <div class="opt" data-g="dur" data-v="30" onclick="pick(this)"><div class="olbl">30s</div></div>
+      <div class="opt sel" data-g="dur" data-v="60" onclick="pick(this)"><div class="olbl">1 min</div></div>
+      <div class="opt" data-g="dur" data-v="90" onclick="pick(this)"><div class="olbl">1:30</div></div>
+      <div class="opt" data-g="dur" data-v="180" onclick="pick(this)"><div class="olbl">3 min</div></div>
+      <div class="opt" data-g="dur" data-v="300" onclick="pick(this)"><div class="olbl">5 min</div></div>
+      <div class="opt" data-g="dur" data-v="0" onclick="pick(this)"><div class="olbl">Completo</div></div>
+    </div>
+  </div>
+  <div class="fg">
+    <label>Observações (opcional)</label>
+    <textarea id="obs" placeholder="Ex: focar na cerimônia, evitar cenas desfocadas..."></textarea>
+  </div>
+</div>
+
+<button class="btn-p" id="btnProc" onclick="processar()">Processar Vídeos ✦</button>
+
+<!-- PROGRESSO -->
+<div class="card prog-wrap" id="progCard">
+  <div class="card-title"><span class="dot"></span>Processando...</div>
+  <div class="prog-pct" id="progPct">0%</div>
+  <div class="prog-bg"><div class="prog-bar" id="progBar"></div></div>
+  <div class="prog-lbl" id="progLbl">Iniciando...</div>
+</div>
+
+<!-- RESULTADOS -->
+<div class="results" id="resCard">
+  <div class="card">
+    <div class="card-title">🎉 Pronto!</div>
+    <div class="ok-note" id="driveOk" style="display:none">✅ Arquivos enviados para o Google Drive!</div>
+    <div id="resList"></div>
+    <button class="btn-s" onclick="resetar()">+ Novo Projeto</button>
+  </div>
+</div>
+
+</div>
+<script>
+// ─── STATE ─────────────────────────────────────────────────────────────────
+var CLIENT_ID = '137620209025-duqstlc8jf144f1ac90bfs8gv6o2jkor.apps.googleusercontent.com';
+var SCOPES = 'https://www.googleapis.com/auth/drive';
+var token = null, user = null;
+var driveFiles = [], selected = [];
+var nextPT = null, pageHistory = [null], pageIdx = 0;
+var vals = { ev:'', md:'', cg:'natural', fmt:'ambos', dur:'60' };
+var ffReady = false, ff = null;
+var tc = null;
+
+// ─── GOOGLE AUTH ────────────────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  var interval = setInterval(function() {
+    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) return;
+    clearInterval(interval);
+    tc = window.google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: function(r) {
+        if (r.error) return;
+        token = r.access_token;
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: 'Bearer ' + token }
+        }).then(function(res) { return res.json(); }).then(function(u) {
+          user = u;
+          renderDrive();
+        });
+      }
+    });
+  }, 300);
+});
+
+function signIn() {
+  if (!tc) { alert('Google ainda carregando. Aguarde 2 segundos e tente novamente.'); return; }
+  tc.requestAccessToken();
+}
+
+function signOut() {
+  if (token && window.google) window.google.accounts.oauth2.revoke(token);
+  token = null; user = null;
+  renderDrive();
+}
+
+function renderDrive() {
+  var row = document.getElementById('driveRow');
+  if (user) {
+    row.innerHTML = (user.picture ? '<img class="drive-av" src="' + user.picture + '"/>' : '<div class="drive-av-ph">👤</div>') +
+      '<div class="drive-info"><div class="drive-name">' + user.name + '</div><div class="drive-sub">Conectado ✓</div></div>' +
+      '<button class="btn-off" onclick="signOut()">Sair</button>';
+  } else {
+    row.innerHTML = '<div class="drive-av-ph">▲</div>' +
+      '<div class="drive-info"><div class="drive-name">Não conectado</div><div class="drive-sub">Conecte para importar vídeos</div></div>' +
+      '<button class="btn-c" onclick="signIn()">Conectar</button>';
+  }
+}
+
+// ─── PASTA ──────────────────────────────────────────────────────────────────
+function extractId(s) {
+  var m = s.match(/folders\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : s.trim();
+}
+
+function buscarVideos(pt) {
+  var raw = document.getElementById('folderId').value.trim();
+  if (!raw) { showErr('Cole o link ou ID da pasta.'); return; }
+  if (!token) { showErr('Conecte o Google Drive primeiro.'); return; }
+  var fid = extractId(raw);
+  document.getElementById('fileList').innerHTML = '<div style="color:var(--mu);font-size:13px;padding:8px 0">🔍 Buscando...</div>';
+  document.getElementById('fileErr').style.display = 'none';
+  var q = encodeURIComponent("'" + fid + "' in parents and mimeType contains 'video/' and trashed = false");
+  var url = 'https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=nextPageToken,files(id,name,size,mimeType)&pageSize=10&orderBy=name';
+  if (pt) url += '&pageToken=' + pt;
+  fetch(url, { headers: { Authorization: 'Bearer ' + token } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.error) { showErr(d.error.message); return; }
+      driveFiles = d.files || [];
+      nextPT = d.nextPageToken || null;
+      renderFiles();
+      updatePg();
+    })
+    .catch(function(e) { showErr('Erro: ' + e.message); });
+}
+
+function renderFiles() {
+  var el = document.getElementById('fileList');
+  if (!driveFiles.length) { el.innerHTML = '<div style="color:var(--mu);font-size:13px;padding:8px 0">Nenhum vídeo encontrado.</div>'; return; }
+  el.innerHTML = driveFiles.map(function(f) {
+    var mb = f.size ? (parseInt(f.size)/1048576).toFixed(0) + 'MB' : '—';
+    var s = selected.find(function(x) { return x.id === f.id; });
+    var safeName = f.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return '<div class="fi ' + (s?'sel':'') + '" onclick="toggle(\'' + f.id + '\',\'' + safeName + '\',' + (f.size||0) + ')">' +
+      '<span>🎞</span><span class="fn">' + f.name + '</span><span class="fs">' + mb + '</span>' +
+      '<div class="fck">' + (s?'✓':'') + '</div></div>';
+  }).join('');
+}
+
+function toggle(id, name, size) {
+  var i = selected.findIndex(function(f) { return f.id === id; });
+  if (i > -1) selected.splice(i,1); else selected.push({id:id, name:name, size:size});
+  renderFiles();
+}
+
+function updatePg() {
+  var row = document.getElementById('pgRow');
+  row.style.display = driveFiles.length ? 'flex' : 'none';
+  document.getElementById('pgPrev').disabled = pageIdx <= 0;
+  document.getElementById('pgNext').disabled = !nextPT;
+  document.getElementById('pgInfo').textContent = 'Página ' + (pageIdx+1);
+}
+
+function proxPagina() {
+  if (!nextPT) return;
+  pageHistory.push(nextPT); pageIdx++;
+  buscarVideos(nextPT);
+}
+
+function pagAnterior() {
+  if (pageIdx <= 0) return;
+  pageIdx--; pageHistory.pop();
+  buscarVideos(pageIdx === 0 ? null : pageHistory[pageIdx]);
+}
+
+function showErr(m) {
+  var e = document.getElementById('fileErr');
+  e.className = 'err'; e.textContent = m; e.style.display = 'block';
+  document.getElementById('fileList').innerHTML = '';
+}
+
+// ─── OPTIONS ────────────────────────────────────────────────────────────────
+function pick(el) {
+  var g = el.dataset.g;
+  document.querySelectorAll('[data-g="' + g + '"]').forEach(function(o) { o.classList.remove('sel'); });
+  el.classList.add('sel');
+  vals[g] = el.dataset.v;
+}
+
+// ─── COLOR FILTERS ──────────────────────────────────────────────────────────
+var colorFilters = {
+  natural:    'eq=brightness=0.02:saturation=1.1:contrast=1.05',
+  quente:     'eq=brightness=0.03:saturation=1.2:contrast=1.1,colorbalance=rs=0.08:gs=-0.03:bs=-0.08',
+  frio:       'eq=brightness=0.02:saturation=0.9:contrast=1.05,colorbalance=rs=-0.08:gs=0:bs=0.12',
+  desaturado: 'eq=brightness=0.01:saturation=0.35:contrast=1.12',
+  verde:      'eq=brightness=0.01:saturation=1.1:contrast=1.08,colorbalance=rs=-0.04:gs=0.08:bs=-0.04',
+  rosado:     'eq=brightness=0.04:saturation=0.85:contrast=1.0,colorbalance=rs=0.08:gs=-0.04:bs=0.04'
+};
+
+// ─── FFMPEG ──────────────────────────────────────────────────────────────────
+function loadFF() {
+  return new Promise(function(resolve, reject) {
+    if (ffReady) { resolve(); return; }
+    if (typeof FFmpeg === 'undefined') { reject(new Error('FFmpeg não carregou. Verifique sua conexão e recarregue a página.')); return; }
+    setProg(2, 'Carregando motor de vídeo (FFmpeg)...');
+    var createFFmpeg = FFmpeg.createFFmpeg;
+    ff = createFFmpeg({
+      log: false,
+      progress: function(p) {
+        setProg(10 + p.ratio * 70, 'Processando: ' + Math.round(p.ratio * 100) + '%');
+      }
+    });
+    ff.load().then(function() {
+      ffReady = true;
+      resolve();
+    }).catch(reject);
+  });
+}
+
+// ─── DRIVE DOWNLOAD / UPLOAD ────────────────────────────────────────────────
+function dlFromDrive(id, name) {
+  setProg(5, 'Baixando ' + name + '...');
+  return fetch('https://www.googleapis.com/drive/v3/files/' + id + '?alt=media', {
+    headers: { Authorization: 'Bearer ' + token }
+  }).then(function(r) {
+    if (!r.ok) throw new Error('Erro ao baixar arquivo: ' + r.statusText);
+    return r.arrayBuffer();
+  }).then(function(buf) { return new Uint8Array(buf); });
+}
+
+function ulToDrive(data, name, folderId) {
+  setProg(93, 'Subindo ' + name + ' para o Drive...');
+  var meta = JSON.stringify({ name: name, parents: folderId ? [folderId] : undefined });
+  var fd = new FormData();
+  fd.append('metadata', new Blob([meta], { type: 'application/json' }));
+  fd.append('file', new Blob([data], { type: 'video/mp4' }));
+  return fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
+    method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd
+  }).then(function(r) { return r.json(); });
+}
+
+// ─── PROCESSAR ───────────────────────────────────────────────────────────────
+function processar() {
+  if (!selected.length) { alert('Selecione pelo menos 1 vídeo!'); return; }
+  var cg = vals.cg || 'natural';
+  var fmt = vals.fmt || 'ambos';
+  var dur = parseInt(vals.dur) || 60;
+  var name = document.getElementById('clientName').value.trim() || 'projeto';
+  var base = name.replace(/\s+/g,'_').replace(/&/g,'e');
+  var rawOut = document.getElementById('outFolderId').value.trim();
+  var rawIn  = document.getElementById('folderId').value.trim();
+  var outId  = rawOut ? extractId(rawOut) : (rawIn ? extractId(rawIn) : null);
+  var cf = colorFilters[cg] || colorFilters.natural;
+  var tArgs = dur > 0 ? ['-t', String(dur)] : [];
+
+  document.getElementById('btnProc').disabled = true;
+  document.getElementById('progCard').classList.add('show');
+  document.getElementById('resCard').classList.remove('show');
+
+  var results = [];
+
+  loadFF().then(function() {
+    return selected.reduce(function(chain, f, i) {
+      return chain.then(function() {
+        var pfx = selected.length > 1 ? (i+1) + '_' : '';
+        return dlFromDrive(f.id, f.name).then(function(inp) {
+          ff.FS('writeFile', 'input.mp4', inp);
+          var p1 = Promise.resolve();
+
+          if (fmt === 'reel' || fmt === 'ambos') {
+            var rn = pfx + base + '_reel_9x16.mp4';
+            setProg(10, 'Exportando Reel 9:16...');
+            p1 = p1.then(function() {
+              return ff.run('-i','input.mp4').concat ? 
+                ff.run.apply(ff, ['-i','input.mp4'].concat(tArgs).concat(['-vf','scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,'+cf,'-c:v','libx264','-preset','ultrafast','-crf','26','-c:a','aac','-b:a','128k',rn])) :
+                ff.run('-i','input.mp4',...tArgs,'-vf','scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,'+cf,'-c:v','libx264','-preset','ultrafast','-crf','26','-c:a','aac','-b:a','128k',rn);
+            }).then(function() {
+              var rd = ff.FS('readFile', rn);
+              try { ff.FS('unlink', rn); } catch(e){}
+              var url = URL.createObjectURL(new Blob([rd], { type:'video/mp4' }));
+              var res = { name:rn, url:url, type:'Reel 9:16', ico:'📱' };
+              results.push(res);
+              if (token && outId) {
+                return ulToDrive(rd, rn, outId).then(function(u) { if (u.webViewLink) res.driveLink = u.webViewLink; });
+              }
+            });
+          }
+
+          if (fmt === 'aftermovie' || fmt === 'ambos') {
+            var an = pfx + base + '_aftermovie_16x9.mp4';
+            p1 = p1.then(function() {
+              setProg(fmt==='ambos'?50:10, 'Exportando Aftermovie 16:9...');
+              return ff.run('-i','input.mp4',...tArgs,'-vf','scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,'+cf,'-c:v','libx264','-preset','ultrafast','-crf','26','-c:a','aac','-b:a','128k',an);
+            }).then(function() {
+              var ad = ff.FS('readFile', an);
+              try { ff.FS('unlink', an); } catch(e){}
+              var url = URL.createObjectURL(new Blob([ad], { type:'video/mp4' }));
+              var res = { name:an, url:url, type:'Aftermovie 16:9', ico:'🖥' };
+              results.push(res);
+              if (token && outId) {
+                return ulToDrive(ad, an, outId).then(function(u) { if (u.webViewLink) res.driveLink = u.webViewLink; });
+              }
+            });
+          }
+
+          return p1.then(function() { try { ff.FS('unlink','input.mp4'); } catch(e){} });
+        });
+      });
+    }, Promise.resolve());
+  }).then(function() {
+    setProg(100, 'Concluído! 🎉');
+    mostrarRes(results, !!(token && outId));
+  }).catch(function(e) {
+    document.getElementById('progCard').classList.remove('show');
+    document.getElementById('btnProc').disabled = false;
+    alert('Erro: ' + e.message);
+    console.error(e);
+  });
+}
+
+function setProg(p, l) {
+  document.getElementById('progBar').style.width = p + '%';
+  document.getElementById('progPct').textContent = Math.round(p) + '%';
+  document.getElementById('progLbl').textContent = l;
+}
+
+function mostrarRes(results, uploadedDrive) {
+  document.getElementById('progCard').classList.remove('show');
+  document.getElementById('resCard').classList.add('show');
+  document.getElementById('driveOk').style.display = uploadedDrive ? 'block' : 'none';
+  document.getElementById('resList').innerHTML = results.map(function(r) {
+    return '<div class="ri">' +
+      '<div class="rico">' + r.ico + '</div>' +
+      '<div class="rinfo"><div class="rn">' + r.name + '</div><div class="rd">' + r.type + ' · MP4</div></div>' +
+      '<a class="btn-dl" href="' + r.url + '" download="' + r.name + '">↓ Baixar</a>' +
+      (r.driveLink ? '<a class="btn-dl" href="' + r.driveLink + '" target="_blank">▲ Drive</a>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function resetar() {
+  selected = [];
+  document.getElementById('resCard').classList.remove('show');
+  document.getElementById('progCard').classList.remove('show');
+  document.getElementById('btnProc').disabled = false;
+  setProg(0,'');
+}
+</script>
+</body>
+</html>
