@@ -41,6 +41,8 @@ function useDrive() {
   const [driveFiles, setDriveFiles] = useState([]);
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveError, setDriveError] = useState("");
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const tokenClientRef = useRef(null);
   const tokenRef = useRef(null);
 
@@ -96,22 +98,25 @@ function useDrive() {
     setDriveFiles([]);
   };
 
-  const listVideoFiles = useCallback(async () => {
+  const listVideoFiles = useCallback(async (pageToken = null, page = 1) => {
     if (!tokenRef.current) { setDriveError("Faça login primeiro."); return; }
     setDriveLoading(true);
     setDriveError("");
     try {
       const q = `mimeType contains 'video/' and trashed = false`;
-      const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,size,mimeType,modifiedTime)&pageSize=50&orderBy=modifiedTime desc`;
+      let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name,size,mimeType,modifiedTime)&pageSize=10&orderBy=modifiedTime desc`;
+      if (pageToken) url += `&pageToken=${pageToken}`;
       const r = await fetch(url, { headers: { Authorization: `Bearer ${tokenRef.current}` } });
       const data = await r.json();
       setDriveFiles(data.files || []);
+      setNextPageToken(data.nextPageToken || null);
+      setCurrentPage(page);
       if (!data.files?.length) setDriveError("Nenhum vídeo encontrado no Drive.");
     } catch { setDriveError("Erro ao listar arquivos."); }
     finally { setDriveLoading(false); }
   }, []);
 
-  return { user, signIn, signOut, driveFiles, driveLoading, driveError, listVideoFiles };
+  return { user, signIn, signOut, driveFiles, driveLoading, driveError, listVideoFiles, nextPageToken, currentPage };
 }
 
 export default function App() {
@@ -350,7 +355,7 @@ export default function App() {
                   <button
                     className="di-btn"
                     style={{background:"rgba(255,92,58,.08)",borderColor:"rgba(255,92,58,.25)",color:"var(--ac)",marginBottom:14}}
-                    onClick={drive.listVideoFiles}
+                    onClick={() => drive.listVideoFiles(null, 1)}
                     disabled={drive.driveLoading}
                   >
                     <span>🔍</span>
@@ -381,6 +386,31 @@ export default function App() {
                       </div>
                     );
                   })}
+
+                  {/* Paginação */}
+                  {drive.driveFiles.length > 0 && (
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:14,gap:10}}>
+                      <button
+                        className="dbtn"
+                        style={{flex:1,padding:"10px"}}
+                        disabled={drive.currentPage <= 1 || drive.driveLoading}
+                        onClick={() => drive.listVideoFiles(null, 1)}
+                      >
+                        ← Início
+                      </button>
+                      <span style={{fontSize:12,color:"var(--mu)",whiteSpace:"nowrap"}}>
+                        Página {drive.currentPage}
+                      </span>
+                      <button
+                        className="dbtn"
+                        style={{flex:1,padding:"10px"}}
+                        disabled={!drive.nextPageToken || drive.driveLoading}
+                        onClick={() => drive.listVideoFiles(drive.nextPageToken, drive.currentPage + 1)}
+                      >
+                        Próxima →
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </div>
