@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Carolzinha Editor — Desktop</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080808;--s:#111;--s2:#1a1a1a;--bd:rgba(255,255,255,.07);--ac:#FF5C3A;--ac2:#FFB547;--tx:#F0EDE8;--mu:#7A7570;--ok:#4ADE80}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+.topbar{background:var(--s);border-bottom:1px solid var(--bd);padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tagline{font-size:12px;color:var(--mu)}
+.page{display:grid;grid-template-columns:1fr 380px;gap:24px;max-width:1100px;margin:0 auto;padding:28px 40px 60px}
+
+/* LEFT */
+.left{display:flex;flex-direction:column;gap:18px}
+.card{background:var(--s);border:1px solid var(--bd);border-radius:16px;padding:22px}
+.ct{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* UPLOAD */
+.up{border:2px dashed rgba(255,92,58,.3);border-radius:14px;padding:40px 24px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(255,92,58,.02);position:relative}
+.up:hover,.up.drag{border-color:var(--ac);background:rgba(255,92,58,.05)}
+.up input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.up-ico{font-size:44px;margin-bottom:12px}
+.up-t{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px}
+.up-s{font-size:13px;color:var(--mu)}
+.sf{background:var(--s2);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:11px 15px;display:flex;align-items:center;gap:11px;margin-top:10px}
+.sf-n{flex:1;font-size:13px}
+.sf-s{font-size:11px;color:var(--mu)}
+.sf-x{width:26px;height:26px;border-radius:50%;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:#f87171;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.sf-x:hover{background:rgba(248,113,113,.2)}
+
+/* OPTIONS */
+label{font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:8px}
+.fg{margin-bottom:16px}
+input[type=text]{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px 15px;color:var(--tx);font-size:14px;outline:none;font-family:'DM Sans',sans-serif;transition:border-color .2s}
+input[type=text]:focus{border-color:rgba(255,92,58,.5)}
+input::placeholder{color:var(--mu)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.opt{background:var(--s2);border:1.5px solid var(--bd);border-radius:12px;padding:13px 10px;cursor:pointer;text-align:center;transition:all .15s;user-select:none}
+.opt:hover{border-color:rgba(255,92,58,.3);background:rgba(255,92,58,.04)}
+.opt.sel{border-color:var(--ac);background:rgba(255,92,58,.08)}
+.oi{font-size:20px;margin-bottom:5px}
+.ol{font-size:12px;font-weight:700;font-family:'Syne',sans-serif}
+.od{font-size:10px;color:var(--mu);margin-top:2px}
+.sw{height:36px;border-radius:8px;margin-bottom:8px;border:2px solid transparent}
+.opt.sel .sw{border-color:#fff}
+
+/* RIGHT PANEL */
+.right{display:flex;flex-direction:column;gap:18px}
+.sticky-panel{position:sticky;top:80px;display:flex;flex-direction:column;gap:14px}
+.btn-p{width:100%;padding:16px;background:linear-gradient(135deg,var(--ac),#FF8C6A);border:none;border-radius:13px;color:#fff;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 24px rgba(255,92,58,.28);transition:all .2s}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 10px 32px rgba(255,92,58,.36)}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-s{width:100%;padding:13px;background:transparent;border:1px solid var(--bd);border-radius:13px;color:var(--mu);font-size:14px;cursor:pointer;transition:all .2s}
+.btn-s:hover{border-color:rgba(255,255,255,.15);color:var(--tx)}
+
+/* PROGRESS */
+.pw{display:none}.pw.show{display:block}
+.pp{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;text-align:center;background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.pb-bg{height:6px;background:var(--s2);border-radius:100px;overflow:hidden;margin-bottom:10px}
+.pb{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:100px;transition:width .5s;width:0%}
+.pl{font-size:13px;color:var(--mu);text-align:center;margin-bottom:12px}
+.ps{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;font-size:12px;color:var(--mu);margin-bottom:6px;transition:all .3s}
+.ps.done{color:var(--tx);border-color:rgba(74,222,128,.2)}.ps.act{color:var(--ac);border-color:rgba(255,92,58,.3)}
+.pd{width:7px;height:7px;border-radius:50%;background:var(--s2);flex-shrink:0}
+.ps.done .pd{background:var(--ok)}.ps.act .pd{background:var(--ac);animation:p 1s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* RESULTS */
+.rw{display:none}.rw.show{display:block}
+.ri{background:var(--s2);border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:9px}
+.ric{width:36px;height:36px;background:rgba(74,222,128,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.rin{flex:1;min-width:0}.rn{font-size:13px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rd{font-size:11px;color:var(--mu)}
+.btn-dl{padding:9px 14px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:var(--ok);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;transition:all .2s;white-space:nowrap}
+.btn-dl:hover{background:rgba(74,222,128,.2)}
+.note{background:rgba(255,181,71,.07);border:1px solid rgba(255,181,71,.2);border-radius:10px;padding:12px 14px;font-size:12px;color:#FFB547;line-height:1.6}
+.ok-n{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--ok);margin-bottom:12px}
+#ov{position:fixed;inset:0;background:rgba(8,8,8,.95);display:none;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:14px;text-align:center}
+#ov.show{display:flex}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);animation:p 1.5s infinite;margin-right:6px}
+</style>
+</head>
+<body>
+
+<div id="ov">
+  <div style="font-size:48px">⚙️</div>
+  <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800">Carregando FFmpeg...</div>
+  <div style="font-size:13px;color:var(--mu);max-width:280px;line-height:1.5">Acontece apenas uma vez por sessão</div>
+  <div style="width:240px;height:5px;background:rgba(255,255,255,.08);border-radius:100px;overflow:hidden">
+    <div id="ob" style="height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));width:0%;transition:width .3s;border-radius:100px"></div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="logo">🎬 Carolzinha Editor</div>
+  <div class="tagline">Envie o vídeo — a plataforma edita</div>
+</div>
+
+<div class="page">
+  <!-- ESQUERDA -->
+  <div class="left">
+
+    <!-- UPLOAD -->
+    <div class="card">
+      <div class="ct">📁 Seus Vídeos</div>
+      <div class="up" id="uz">
+        <input type="file" accept="video/*" multiple onchange="onF(this.files)" id="fi"/>
+        <div class="up-ico">🎬</div>
+        <div class="up-t">Arraste ou clique para selecionar</div>
+        <div class="up-s">MP4, MOV, AVI, MKV · Múltiplos vídeos aceitos</div>
+      </div>
+      <div id="sf"></div>
+    </div>
+
+    <!-- BRIEFING -->
+    <div class="card">
+      <div class="ct">📋 Briefing do Projeto</div>
+      <div class="fg">
+        <label>Nome do cliente</label>
+        <input type="text" id="cn" placeholder="Ex: Ana & Pedro"/>
+      </div>
+      <div class="fg">
+        <label>Tipo de evento</label>
+        <div class="g3">
+          <div class="opt" data-g="ev" data-v="casamento" onclick="pick(this)"><div class="oi">💍</div><div class="ol">Casamento</div></div>
+          <div class="opt" data-g="ev" data-v="aniversario" onclick="pick(this)"><div class="oi">🎂</div><div class="ol">Aniversário</div></div>
+          <div class="opt" data-g="ev" data-v="quincea" onclick="pick(this)"><div class="oi">👑</div><div class="ol">Quinceañera</div></div>
+          <div class="opt" data-g="ev" data-v="corporativo" onclick="pick(this)"><div class="oi">🏢</div><div class="ol">Corporativo</div></div>
+          <div class="opt" data-g="ev" data-v="formatura" onclick="pick(this)"><div class="oi">🎓</div><div class="ol">Formatura</div></div>
+          <div class="opt" data-g="ev" data-v="outro" onclick="pick(this)"><div class="oi">🎬</div><div class="ol">Outro</div></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Mood</label>
+        <div class="g2">
+          <div class="opt" data-g="md" data-v="romantico" onclick="pick(this)"><div class="oi">🌹</div><div class="ol">Romântico</div><div class="od">Suave, quente, intimista</div></div>
+          <div class="opt" data-g="md" data-v="energetico" onclick="pick(this)"><div class="oi">⚡</div><div class="ol">Enérgico</div><div class="od">Rápido, vibrante, impactante</div></div>
+          <div class="opt" data-g="md" data-v="cinematico" onclick="pick(this)"><div class="oi">🎬</div><div class="ol">Cinemático</div><div class="od">Épico, dramático, profundo</div></div>
+          <div class="opt" data-g="md" data-v="alegre" onclick="pick(this)"><div class="oi">🎉</div><div class="ol">Alegre</div><div class="od">Leve, colorido, festivo</div></div>
+          <div class="opt" data-g="md" data-v="elegante" onclick="pick(this)"><div class="oi">✨</div><div class="ol">Elegante</div><div class="od">Clean, sofisticado, refinado</div></div>
+          <div class="opt" data-g="md" data-v="nostalgico" onclick="pick(this)"><div class="oi">🎞</div><div class="ol">Nostálgico</div><div class="od">Vintage, cálido, emocional</div></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Color Grade</label>
+        <div class="g2">
+          <div class="opt sel" data-g="cg" data-v="natural" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#D4A76A99,#D4A76A33)"></div><div class="ol">Natural</div></div>
+          <div class="opt" data-g="cg" data-v="quente" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#D46A1A99,#D46A1A33)"></div><div class="ol">Quente & Âmbar</div></div>
+          <div class="opt" data-g="cg" data-v="frio" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#6A9FD499,#6A9FD433)"></div><div class="ol">Frio & Azulado</div></div>
+          <div class="opt" data-g="cg" data-v="desaturado" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#9A9A9A99,#9A9A9A33)"></div><div class="ol">Desaturado</div></div>
+          <div class="opt" data-g="cg" data-v="verde" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#4A8C6A99,#4A8C6A33)"></div><div class="ol">Verde Cinemático</div></div>
+          <div class="opt" data-g="cg" data-v="rosado" onclick="pick(this)"><div class="sw" style="background:linear-gradient(135deg,#D46A8C99,#D46A8C33)"></div><div class="ol">Rosado & Pastel</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIREITA -->
+  <div class="right">
+    <div class="sticky-panel">
+
+      <div class="card">
+        <div class="ct">⚙️ Configurações</div>
+        <div class="fg">
+          <label>Formato de saída</label>
+          <div class="g3">
+            <div class="opt" data-g="fmt" data-v="reel" onclick="pick(this)"><div class="oi">📱</div><div class="ol">Reel</div><div class="od">9:16</div></div>
+            <div class="opt" data-g="fmt" data-v="aftermovie" onclick="pick(this)"><div class="oi">🖥</div><div class="ol">Aftermovie</div><div class="od">16:9</div></div>
+            <div class="opt sel" data-g="fmt" data-v="ambos" onclick="pick(this)"><div class="oi">✦</div><div class="ol">Ambos</div><div class="od">9:16 + 16:9</div></div>
+          </div>
+        </div>
+        <div class="fg" style="margin-bottom:0">
+          <label>Duração do vídeo final</label>
+          <div class="g3">
+            <div class="opt" data-g="dur" data-v="30" onclick="pick(this)"><div class="ol">30s</div></div>
+            <div class="opt sel" data-g="dur" data-v="60" onclick="pick(this)"><div class="ol">1 min</div></div>
+            <div class="opt" data-g="dur" data-v="90" onclick="pick(this)"><div class="ol">1:30</div></div>
+            <div class="opt" data-g="dur" data-v="180" onclick="pick(this)"><div class="ol">3 min</div></div>
+            <div class="opt" data-g="dur" data-v="300" onclick="pick(this)"><div class="ol">5 min</div></div>
+            <div class="opt" data-g="dur" data-v="0" onclick="pick(this)"><div class="ol">Completo</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note">⚡ O processamento roda direto no seu navegador. Não é necessário instalar nada.</div>
+
+      <button class="btn-p" id="bp" onclick="proc()">✦ Editar Vídeo Agora</button>
+
+      <!-- PROGRESSO -->
+      <div class="card pw" id="pc">
+        <div class="ct"><span class="dot"></span>Editando...</div>
+        <div class="pp" id="ppt">0%</div>
+        <div class="pb-bg"><div class="pb" id="pb"></div></div>
+        <div class="pl" id="pl">Iniciando...</div>
+        <div class="ps" id="ps0"><div class="pd"></div>Lendo vídeo</div>
+        <div class="ps" id="ps1"><div class="pd"></div>Aplicando color grade</div>
+        <div class="ps" id="ps2"><div class="pd"></div>Exportando Reel 9:16</div>
+        <div class="ps" id="ps3"><div class="pd"></div>Exportando Aftermovie 16:9</div>
+        <div class="ps" id="ps4"><div class="pd"></div>Finalizando</div>
+      </div>
+
+      <!-- RESULTADOS -->
+      <div class="rw" id="rc">
+        <div class="card">
+          <div class="ct">🎉 Pronto para baixar!</div>
+          <div class="ok-n">✅ Clique em Baixar para salvar no computador!</div>
+          <div id="rl"></div>
+          <button class="btn-s" onclick="rst()">+ Novo Projeto</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+<script>
+var files=[],vals={ev:'',md:'',cg:'natural',fmt:'ambos',dur:'60'},ffR=false,ff=null;
+var CF={natural:'eq=brightness=0.02:saturation=1.1:contrast=1.05',quente:'eq=brightness=0.03:saturation=1.2:contrast=1.1,colorbalance=rs=0.08:gs=-0.03:bs=-0.08',frio:'eq=brightness=0.02:saturation=0.9:contrast=1.05,colorbalance=rs=-0.08:gs=0:bs=0.12',desaturado:'eq=brightness=0.01:saturation=0.35:contrast=1.12',verde:'eq=brightness=0.01:saturation=1.1:contrast=1.08,colorbalance=rs=-0.04:gs=0.08:bs=-0.04',rosado:'eq=brightness=0.04:saturation=0.85:contrast=1.0,colorbalance=rs=0.08:gs=-0.04:bs=0.04'};
+
+var uz=document.getElementById('uz');
+uz.addEventListener('dragover',function(e){e.preventDefault();uz.classList.add('drag');});
+uz.addEventListener('dragleave',function(){uz.classList.remove('drag');});
+uz.addEventListener('drop',function(e){e.preventDefault();uz.classList.remove('drag');onF(e.dataTransfer.files);});
+
+function onF(fl){for(var i=0;i<fl.length;i++)files.push(fl[i]);rF();}
+function rF(){var el=document.getElementById('sf');if(!files.length){el.innerHTML='';return;}el.innerHTML=files.map(function(f,i){return'<div class="sf"><div>🎞</div><div class="sf-n">'+esc(f.name)+'</div><div class="sf-s">'+(f.size/1048576).toFixed(0)+'MB</div><div class="sf-x" onclick="rmF('+i+')">✕</div></div>';}).join('');}
+function rmF(i){files.splice(i,1);rF();}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function pick(el){var g=el.dataset.g;document.querySelectorAll('[data-g="'+g+'"]').forEach(function(o){o.classList.remove('sel');});el.classList.add('sel');vals[g]=el.dataset.v;}
+function sP(p,l){document.getElementById('pb').style.width=p+'%';document.getElementById('ppt').textContent=Math.round(p)+'%';document.getElementById('pl').textContent=l;}
+function sS(i){for(var j=0;j<5;j++){var e=document.getElementById('ps'+j);e.className='ps'+(j<i?' done':j===i?' act':'');}}
+
+function loadFF(){return new Promise(function(res,rej){if(ffR){res();return;}if(typeof FFmpeg==='undefined'){rej(new Error('FFmpeg não carregou. Recarregue a página.'));return;}var ov=document.getElementById('ov'),ob=document.getElementById('ob');ov.classList.add('show');var p=0,t=setInterval(function(){p=Math.min(p+2,90);ob.style.width=p+'%';},150);ff=FFmpeg.createFFmpeg({log:false,progress:function(x){sP(20+x.ratio*60,'Processando: '+Math.round(x.ratio*100)+'%');}});ff.load().then(function(){clearInterval(t);ob.style.width='100%';setTimeout(function(){ov.classList.remove('show');},400);ffR=true;res();}).catch(function(e){clearInterval(t);ov.classList.remove('show');rej(e);});});}
+
+function proc(){
+  if(!files.length){alert('Selecione pelo menos 1 vídeo!');return;}
+  var fmt=vals.fmt||'ambos',dur=parseInt(vals.dur)||60,name=document.getElementById('cn').value.trim()||'projeto';
+  var base=name.replace(/\s+/g,'_').replace(/&/g,'e'),cf=CF[vals.cg]||CF.natural,tA=dur>0?['-t',String(dur)]:[];
+  document.getElementById('bp').disabled=true;
+  document.getElementById('pc').classList.add('show');
+  document.getElementById('rc').classList.remove('show');
+  var results=[];
+  function next(i){
+    if(i>=files.length){sP(100,'Concluído! 🎉');sS(5);show(results);return Promise.resolve();}
+    var f=files[i],pfx=files.length>1?(i+1)+'_':'';
+    sP(5,'Lendo '+f.name+'...');sS(0);
+    return f.arrayBuffer().then(function(buf){
+      ff.FS('writeFile','input.mp4',new Uint8Array(buf));sS(1);sP(15,'Aplicando color grade...');
+      var ch=Promise.resolve();
+      if(fmt==='reel'||fmt==='ambos'){ch=ch.then(function(){sS(2);sP(20,'Exportando Reel 9:16...');var rn=pfx+base+'_reel_9x16.mp4';return ff.run.apply(ff,['-i','input.mp4'].concat(tA).concat(['-vf','scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,'+cf,'-c:v','libx264','-preset','ultrafast','-crf','26','-c:a','aac','-b:a','128k',rn])).then(function(){var d=ff.FS('readFile',rn);try{ff.FS('unlink',rn);}catch(e){}results.push({name:rn,url:URL.createObjectURL(new Blob([d],{type:'video/mp4'})),type:'Reel 9:16',ico:'📱'});});});}
+      if(fmt==='aftermovie'||fmt==='ambos'){ch=ch.then(function(){sS(3);sP(fmt==='ambos'?55:20,'Exportando Aftermovie 16:9...');var an=pfx+base+'_aftermovie_16x9.mp4';return ff.run.apply(ff,['-i','input.mp4'].concat(tA).concat(['-vf','scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,'+cf,'-c:v','libx264','-preset','ultrafast','-crf','26','-c:a','aac','-b:a','128k',an])).then(function(){var d=ff.FS('readFile',an);try{ff.FS('unlink',an);}catch(e){}results.push({name:an,url:URL.createObjectURL(new Blob([d],{type:'video/mp4'})),type:'Aftermovie 16:9',ico:'🖥'});});});}
+      return ch.then(function(){sS(4);try{ff.FS('unlink','input.mp4');}catch(e){}return next(i+1);});
+    });
+  }
+  loadFF().then(function(){return next(0);}).catch(function(e){document.getElementById('pc').classList.remove('show');document.getElementById('bp').disabled=false;alert('Erro: '+e.message);console.error(e);});
+}
+
+function show(results){
+  document.getElementById('pc').classList.remove('show');
+  document.getElementById('rc').classList.add('show');
+  document.getElementById('rl').innerHTML=results.map(function(r){return'<div class="ri"><div class="ric">'+r.ico+'</div><div class="rin"><div class="rn">'+esc(r.name)+'</div><div class="rd">'+r.type+' · MP4</div></div><a class="btn-dl" href="'+r.url+'" download="'+esc(r.name)+'">↓ Baixar</a></div>';}).join('');
+}
+
+function rst(){files=[];rF();document.getElementById('rc').classList.remove('show');document.getElementById('pc').classList.remove('show');document.getElementById('bp').disabled=false;document.getElementById('fi').value='';sP(0,'');}
+</script>
+</body>
+</html>
